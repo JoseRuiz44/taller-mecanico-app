@@ -892,11 +892,20 @@
 
 <script>
 // ═══════════════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════════════
+const SERVICE_INTERVAL_KM = 10000;
+const WARNING_THRESHOLD_KM = 1000;
+
+// ═══════════════════════════════════════════════
 //  STORE
 // ═══════════════════════════════════════════════
 const STORE_KEY = 'tallerProData';
 
 function genId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
   return String(Date.now()) + String(Math.random()).slice(2, 8);
 }
 
@@ -1026,7 +1035,7 @@ function countProximasVencer() {
   return DB.revisiones.filter(r => {
     const km = parseInt(r.km) || 0;
     const prox = parseInt(r.prox) || 0;
-    return prox > 0 && km >= prox - 1000;
+    return prox > 0 && km >= prox - WARNING_THRESHOLD_KM;
   }).length;
 }
 
@@ -1516,7 +1525,7 @@ document.getElementById('btn-save-revision').addEventListener('click', () => {
   const kmVal = document.getElementById('rev-km').value;
   if (!kmVal) { toast('Los kilómetros son obligatorios.', 'error'); return; }
   const km = parseInt(kmVal) || 0;
-  const prox = km + 10000;
+  const prox = km + SERVICE_INTERVAL_KM;
   const ver = document.getElementById('rev-ver').value;
   const notas = document.getElementById('rev-notas').value.trim();
   const productos = getVehicleProductsString(mat);
@@ -1541,7 +1550,7 @@ function renderRevisiones(filter = '') {
   const tbody = document.querySelector('#tabla-revisiones tbody');
   tbody.innerHTML = '';
   const term = filter.toLowerCase().trim();
-  let list = [...DB.revisiones].sort((a, b) => (b.fecha || '') > (a.fecha || '') ? 1 : -1);
+  let list = [...DB.revisiones].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
   if (term) list = list.filter(r => (r.mat || '').toLowerCase().includes(term));
   document.getElementById('revisiones-count').textContent = list.length;
   if (!list.length) {
@@ -1557,7 +1566,7 @@ function renderRevisiones(filter = '') {
   list.forEach(r => {
     const km = parseInt(r.km) || 0;
     const prox = parseInt(r.prox) || 0;
-    const isWarn = prox > 0 && km >= prox - 1000;
+    const isWarn = prox > 0 && km >= prox - WARNING_THRESHOLD_KM;
     const tr = document.createElement('tr');
     if (isWarn) tr.className = 'row-danger';
 
