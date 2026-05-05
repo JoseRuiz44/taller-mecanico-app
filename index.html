@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Taller Mecánico PRO</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#3b82f6" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Taller PRO" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f172a;
+      --sidebar: #1e293b;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --green: #22c55e;
+      --green-hover: #16a34a;
+      --red: #ef4444;
+      --red-hover: #dc2626;
+      --orange: #f97316;
+      --yellow: #eab308;
+      --radius: 10px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.4);
+      --transition: 0.25s ease;
+      --sidebar-w: 240px;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+    }
+
+    /* ─── SIDEBAR ─── */
+    #sidebar {
+      width: var(--sidebar-w);
+      background: var(--sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 200;
+      transition: transform var(--transition);
+    }
+    #sidebar.collapsed { transform: translateX(calc(-1 * var(--sidebar-w))); }
+
+    .sidebar-header {
+      padding: 20px 16px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sidebar-logo {
+      font-size: 28px;
+      line-height: 1;
+    }
+    .sidebar-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1.2;
+    }
+    .sidebar-subtitle {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 8px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background var(--transition), color var(--transition);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--muted);
+      user-select: none;
+      margin-bottom: 2px;
+    }
+    .nav-item:hover { background: rgba(59,130,246,0.12); color: var(--text); }
+    .nav-item.active { background: var(--accent); color: #fff; }
+    .nav-icon { font-size: 18px; width: 24px; text-align: center; }
+
+    .sidebar-footer {
+      padding: 12px 8px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .btn-export, .btn-import {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 9px;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: background var(--transition), transform 0.1s;
+    }
+    .btn-export:active, .btn-import:active { transform: scale(0.97); }
+    .btn-export { background: var(--green); color: #fff; }
+    .btn-export:hover { background: var(--green-hover); }
+    .btn-import { background: var(--accent); color: #fff; }
+    .btn-import:hover { background: var(--accent-hover); }
+
+    /* ─── MAIN ─── */
+    #main {
+      flex: 1;
+      margin-left: var(--sidebar-w);
+      transition: margin-left var(--transition);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    #main.full { margin-left: 0; }
+
+    /* ─── TOPBAR ─── */
+    #topbar {
+      background: var(--sidebar);
+      border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    #hamburger {
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 6px;
+      line-height: 1;
+      transition: background var(--transition);
+    }
+    #hamburger:hover { background: rgba(255,255,255,0.08); }
+    #page-title {
+      font-size: 17px;
+      font-weight: 700;
+      flex: 1;
+    }
+
+    /* ─── CONTENT ─── */
+    #content {
+      flex: 1;
+      padding: 24px 20px;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .section { display: none; animation: fadeIn 0.3s ease; }
+    .section.active { display: block; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ─── DASHBOARD ─── */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .dash-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 16px;
+      text-align: center;
+      transition: transform var(--transition), box-shadow var(--transition);
+      cursor: default;
+    }
+    .dash-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+    .dash-card-icon { font-size: 36px; line-height: 1; margin-bottom: 8px; }
+    .dash-card-count { font-size: 32px; font-weight: 800; color: var(--accent); line-height: 1; }
+    .dash-card-label { font-size: 12px; color: var(--muted); margin-top: 4px; font-weight: 500; }
+    .dash-card.warning .dash-card-count { color: var(--orange); }
+    .dash-card.warning .dash-card-icon { filter: drop-shadow(0 0 8px var(--orange)); }
+
+    /* ─── SECTION HEADER ─── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .section-header h2 { font-size: 20px; font-weight: 700; flex: 1; }
+    .record-count {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: background var(--transition), transform 0.1s;
+      white-space: nowrap;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-success { background: var(--green); color: #fff; }
+    .btn-success:hover { background: var(--green-hover); }
+    .btn-danger { background: var(--red); color: #fff; }
+    .btn-danger:hover { background: var(--red-hover); }
+    .btn-secondary { background: var(--border); color: var(--text); }
+    .btn-secondary:hover { background: #475569; }
+
+    /* ─── SEARCH BAR ─── */
+    .search-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .search-input {
+      flex: 1;
+      min-width: 160px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: 8px 12px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color var(--transition);
+    }
+    .search-input:focus { border-color: var(--accent); }
+    .search-input::placeholder { color: var(--muted); }
+    .filter-select {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: 8px 12px;
+      font-size: 14px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color var(--transition);
+    }
+    .filter-select:focus { border-color: var(--accent); }
+
+    /* ─── TABLE ─── */
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    thead tr { background: #0f172a; }
+    th {
+      padding: 11px 14px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(51,65,85,0.5);
+      vertical-align: middle;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:nth-child(even) { background: rgba(30,41,59,0.4); }
+    tbody tr:hover { background: rgba(59,130,246,0.08); }
+    tbody tr.row-danger { background: rgba(239,68,68,0.12) !important; }
+    tbody tr.row-danger:hover { background: rgba(239,68,68,0.2) !important; }
+    tbody tr.row-warning { background: rgba(249,115,22,0.1) !important; }
+    tbody tr.row-warning:hover { background: rgba(249,115,22,0.18) !important; }
+
+    .empty-row td {
+      text-align: center;
+      padding: 32px;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .action-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 15px;
+      padding: 4px 7px;
+      border-radius: 6px;
+      transition: background var(--transition);
+      line-height: 1;
+    }
+    .action-btn.edit { color: var(--accent); }
+    .action-btn.edit:hover { background: rgba(59,130,246,0.15); }
+    .action-btn.del { color: var(--red); }
+    .action-btn.del:hover { background: rgba(239,68,68,0.15); }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .badge-yes { background: rgba(34,197,94,0.2); color: var(--green); }
+    .badge-no { background: rgba(148,163,184,0.15); color: var(--muted); }
+    .badge-warn { background: rgba(239,68,68,0.2); color: var(--red); }
+
+    /* ─── REVISION FORM ─── */
+    .rev-form-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .rev-form-card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--accent);
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+    .form-control {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 9px 11px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color var(--transition);
+      width: 100%;
+      font-family: inherit;
+    }
+    .form-control:focus { border-color: var(--accent); }
+    .form-control::placeholder { color: var(--muted); }
+    select.form-control { cursor: pointer; }
+    textarea.form-control { resize: vertical; min-height: 70px; }
+
+    .vehicle-summary {
+      margin-top: 12px;
+      padding: 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      display: none;
+    }
+    .vehicle-summary.visible { display: block; }
+    .vehicle-summary strong { color: var(--text); }
+
+    /* ─── MODAL ─── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 500;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      backdrop-filter: blur(3px);
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--sidebar);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      width: 100%;
+      max-width: 560px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow);
+      animation: modalIn 0.2s ease;
+    }
+    @keyframes modalIn { from { opacity:0; transform:scale(0.95) translateY(10px); } to { opacity:1; transform:scale(1) translateY(0); } }
+    .modal-header {
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-header h3 { font-size: 16px; font-weight: 700; }
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 20px;
+      line-height: 1;
+      padding: 4px;
+      border-radius: 6px;
+      transition: color var(--transition), background var(--transition);
+    }
+    .modal-close:hover { color: var(--text); background: rgba(255,255,255,0.08); }
+    .modal-body { padding: 20px; }
+    .modal-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .modal-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .modal-form-grid .full-col { grid-column: 1 / -1; }
+
+    .form-section-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+      grid-column: 1 / -1;
+    }
+
+    /* ─── CONFIRM MODAL ─── */
+    #confirm-modal .modal { max-width: 380px; }
+    .confirm-icon { font-size: 42px; text-align: center; margin-bottom: 12px; }
+    .confirm-msg { text-align: center; color: var(--muted); font-size: 14px; }
+
+    /* ─── TOAST ─── */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .toast {
+      background: var(--sidebar);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: var(--shadow);
+      pointer-events: all;
+      animation: toastIn 0.3s ease;
+      min-width: 220px;
+      max-width: 320px;
+    }
+    @keyframes toastIn { from { opacity:0; transform:translateX(40px); } to { opacity:1; transform:translateX(0); } }
+    .toast.toast-success { border-left: 4px solid var(--green); }
+    .toast.toast-error { border-left: 4px solid var(--red); }
+    .toast.toast-info { border-left: 4px solid var(--accent); }
+
+    /* ─── OVERLAY for mobile ─── */
+    #overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 150;
+    }
+    #overlay.visible { display: block; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      #sidebar { transform: translateX(calc(-1 * var(--sidebar-w))); }
+      #sidebar.open { transform: translateX(0); }
+      #main { margin-left: 0 !important; }
+      .modal-form-grid { grid-template-columns: 1fr; }
+      .modal-form-grid .full-col { grid-column: 1; }
+      .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
+      #content { padding: 16px 12px; }
+    }
+    @media (min-width: 769px) {
+      #hamburger { display: none; }
+      #overlay { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav id="sidebar">
+  <div class="sidebar-header">
+    <span class="sidebar-logo">🔧</span>
+    <div>
+      <div class="sidebar-title">Taller Mecánico</div>
+      <div class="sidebar-subtitle">PRO Manager</div>
+    </div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-item active" data-section="dashboard">
+      <span class="nav-icon">🏠</span> Dashboard
+    </div>
+    <div class="nav-item" data-section="clientes">
+      <span class="nav-icon">👤</span> Clientes
+    </div>
+    <div class="nav-item" data-section="productos">
+      <span class="nav-icon">🧰</span> Productos
+    </div>
+    <div class="nav-item" data-section="vehiculos">
+      <span class="nav-icon">🚗</span> Vehículos
+    </div>
+    <div class="nav-item" data-section="revisiones">
+      <span class="nav-icon">🧾</span> Revisiones
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <button class="btn-export" id="btn-export">💾 Exportar</button>
+    <button class="btn-import" id="btn-import-btn">📂 Importar</button>
+    <input type="file" id="import-file" accept=".json" style="display:none" />
+  </div>
+</nav>
+
+<!-- Mobile overlay -->
+<div id="overlay"></div>
+
+<!-- Main -->
+<div id="main">
+  <header id="topbar">
+    <button id="hamburger" aria-label="Menú">☰</button>
+    <span id="page-title">Dashboard</span>
+  </header>
+
+  <main id="content">
+
+    <!-- DASHBOARD -->
+    <section id="section-dashboard" class="section active">
+      <div class="section-header">
+        <h2>🏠 Dashboard</h2>
+      </div>
+      <div class="dashboard-grid" id="dash-cards"></div>
+    </section>
+
+    <!-- CLIENTES -->
+    <section id="section-clientes" class="section">
+      <div class="section-header">
+        <h2>👤 Clientes</h2>
+        <span class="record-count" id="clientes-count">0</span>
+        <button class="btn btn-primary" id="btn-new-cliente">＋ Nuevo</button>
+      </div>
+      <div class="search-bar">
+        <input type="search" class="search-input" id="search-clientes" placeholder="🔍 Buscar por nombre…" />
+      </div>
+      <div class="table-wrap">
+        <table id="tabla-clientes">
+          <thead>
+            <tr>
+              <th>Nombre</th><th>Teléfono</th><th>Dirección</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- PRODUCTOS -->
+    <section id="section-productos" class="section">
+      <div class="section-header">
+        <h2>🧰 Productos</h2>
+        <span class="record-count" id="productos-count">0</span>
+        <button class="btn btn-primary" id="btn-new-producto">＋ Nuevo</button>
+      </div>
+      <div class="search-bar">
+        <select class="filter-select" id="filter-tipo-producto">
+          <option value="">Todos los tipos</option>
+          <option>Aceites</option>
+          <option>Filtro Aceite</option>
+          <option>Filtro Aire</option>
+          <option>Filtro Combustible</option>
+          <option>Filtro Habitaculo</option>
+          <option>Arandela Carter</option>
+        </select>
+        <input type="search" class="search-input" id="search-productos" placeholder="🔍 Buscar…" />
+      </div>
+      <div class="table-wrap">
+        <table id="tabla-productos">
+          <thead>
+            <tr>
+              <th>Tipo</th><th>Nombre</th><th>Marca</th><th>Referencia</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- VEHÍCULOS -->
+    <section id="section-vehiculos" class="section">
+      <div class="section-header">
+        <h2>🚗 Vehículos</h2>
+        <span class="record-count" id="vehiculos-count">0</span>
+        <button class="btn btn-primary" id="btn-new-vehiculo">＋ Nuevo</button>
+      </div>
+      <div class="search-bar">
+        <input type="search" class="search-input" id="search-vehiculos" placeholder="🔍 Buscar por matrícula o cliente…" />
+      </div>
+      <div class="table-wrap">
+        <table id="tabla-vehiculos">
+          <thead>
+            <tr>
+              <th>Matrícula</th><th>Cliente</th><th>Marca</th><th>Modelo</th><th>Motor</th>
+              <th>Aceite</th><th>Litros</th><th>F.Aceite</th><th>F.Aire</th>
+              <th>F.Comb.</th><th>F.Hab.</th><th>Arandela</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- REVISIONES -->
+    <section id="section-revisiones" class="section">
+      <div class="section-header">
+        <h2>🧾 Revisiones</h2>
+        <span class="record-count" id="revisiones-count">0</span>
+      </div>
+
+      <!-- Form card -->
+      <div class="rev-form-card">
+        <h3 id="rev-form-title">➕ Nueva Revisión</h3>
+        <input type="hidden" id="rev-edit-id" />
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Vehículo (Matrícula)</label>
+            <select class="form-control" id="rev-mat"></select>
+          </div>
+          <div class="form-group">
+            <label>Fecha</label>
+            <input type="date" class="form-control" id="rev-fecha" />
+          </div>
+          <div class="form-group">
+            <label>Kilómetros</label>
+            <input type="number" class="form-control" id="rev-km" placeholder="Km actuales" min="0" />
+          </div>
+          <div class="form-group">
+            <label>Verificado</label>
+            <select class="form-control" id="rev-ver">
+              <option value="Sí">Sí</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+          <div class="form-group full-col" style="grid-column:1/-1;">
+            <label>Notas</label>
+            <textarea class="form-control" id="rev-notas" placeholder="Observaciones…" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="vehicle-summary" id="rev-vehicle-summary"></div>
+        <div style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-success" id="btn-save-revision">💾 Guardar</button>
+          <button class="btn btn-secondary" id="btn-cancel-revision" style="display:none;">✕ Cancelar</button>
+        </div>
+      </div>
+
+      <div class="search-bar">
+        <input type="search" class="search-input" id="search-revisiones" placeholder="🔍 Filtrar por matrícula…" />
+        <button class="btn btn-secondary" id="btn-ver-todas">Ver todas</button>
+      </div>
+
+      <div class="table-wrap">
+        <table id="tabla-revisiones">
+          <thead>
+            <tr>
+              <th>Matrícula</th><th>Fecha</th><th>Km</th><th>Próx. Km</th>
+              <th>Productos</th><th>Verificado</th><th>Notas</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ─── MODAL CLIENTES ─── -->
+<div class="modal-overlay" id="modal-cliente">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-cliente-title">Nuevo Cliente</h3>
+      <button class="modal-close" data-close="modal-cliente">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="cliente-edit-id" />
+      <div class="modal-form-grid">
+        <div class="form-group full-col">
+          <label>Nombre <span style="color:var(--red)">*</span></label>
+          <input type="text" class="form-control" id="cliente-nombre" placeholder="Nombre completo" />
+        </div>
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="tel" class="form-control" id="cliente-tel" placeholder="Teléfono" />
+        </div>
+        <div class="form-group">
+          <label>Dirección</label>
+          <input type="text" class="form-control" id="cliente-dir" placeholder="Dirección" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="modal-cliente">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-cliente">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── MODAL PRODUCTOS ─── -->
+<div class="modal-overlay" id="modal-producto">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-producto-title">Nuevo Producto</h3>
+      <button class="modal-close" data-close="modal-producto">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="producto-edit-id" />
+      <div class="modal-form-grid">
+        <div class="form-group full-col">
+          <label>Tipo <span style="color:var(--red)">*</span></label>
+          <select class="form-control" id="producto-tipo">
+            <option value="">— Seleccionar tipo —</option>
+            <option>Aceites</option>
+            <option>Filtro Aceite</option>
+            <option>Filtro Aire</option>
+            <option>Filtro Combustible</option>
+            <option>Filtro Habitaculo</option>
+            <option>Arandela Carter</option>
+          </select>
+        </div>
+        <div class="form-group full-col">
+          <label>Nombre <span style="color:var(--red)">*</span></label>
+          <input type="text" class="form-control" id="producto-nombre" placeholder="Nombre del producto" />
+        </div>
+        <div class="form-group">
+          <label>Marca</label>
+          <input type="text" class="form-control" id="producto-marca" placeholder="Marca" />
+        </div>
+        <div class="form-group">
+          <label>Referencia</label>
+          <input type="text" class="form-control" id="producto-ref" placeholder="Referencia" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="modal-producto">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-producto">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── MODAL VEHÍCULOS ─── -->
+<div class="modal-overlay" id="modal-vehiculo">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-header">
+      <h3 id="modal-vehiculo-title">Nuevo Vehículo</h3>
+      <button class="modal-close" data-close="modal-vehiculo">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="vehiculo-edit-id" />
+      <div class="modal-form-grid">
+        <div class="form-section-title">📋 Datos del vehículo</div>
+        <div class="form-group">
+          <label>Matrícula <span style="color:var(--red)">*</span></label>
+          <input type="text" class="form-control" id="veh-mat" placeholder="0000 AAA" />
+        </div>
+        <div class="form-group">
+          <label>Cliente</label>
+          <select class="form-control" id="veh-cliente"></select>
+        </div>
+        <div class="form-group">
+          <label>Marca</label>
+          <input type="text" class="form-control" id="veh-marca" placeholder="Marca" />
+        </div>
+        <div class="form-group">
+          <label>Modelo</label>
+          <input type="text" class="form-control" id="veh-modelo" placeholder="Modelo" />
+        </div>
+        <div class="form-group full-col">
+          <label>Motor</label>
+          <input type="text" class="form-control" id="veh-motor" placeholder="Motor" />
+        </div>
+
+        <div class="form-section-title">🛢️ Productos asignados</div>
+        <div class="form-group">
+          <label>Aceite</label>
+          <select class="form-control" id="veh-aceite"></select>
+        </div>
+        <div class="form-group">
+          <label>Litros</label>
+          <input type="text" class="form-control" id="veh-litros" placeholder="Ej: 4.5L" />
+        </div>
+        <div class="form-group">
+          <label>Filtro Aceite</label>
+          <select class="form-control" id="veh-fa"></select>
+        </div>
+        <div class="form-group">
+          <label>Filtro Aire</label>
+          <select class="form-control" id="veh-fai"></select>
+        </div>
+        <div class="form-group">
+          <label>Filtro Combustible</label>
+          <select class="form-control" id="veh-fc"></select>
+        </div>
+        <div class="form-group">
+          <label>Filtro Habitáculo</label>
+          <select class="form-control" id="veh-fh"></select>
+        </div>
+        <div class="form-group">
+          <label>Arandela Carter</label>
+          <select class="form-control" id="veh-ar"></select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="modal-vehiculo">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-vehiculo">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── CONFIRM MODAL ─── -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal">
+    <div class="modal-body" style="padding:28px 24px;">
+      <div class="confirm-icon">🗑️</div>
+      <p class="confirm-msg" id="confirm-msg">¿Estás seguro de que quieres eliminar este registro?</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="confirm-modal">Cancelar</button>
+      <button class="btn btn-danger" id="btn-confirm-delete">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  STORE
+// ═══════════════════════════════════════════════
+const STORE_KEY = 'tallerProData';
+
+function genId() {
+  return String(Date.now()) + String(Math.random()).slice(2, 8);
+}
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return { clientes: [], productos: [], vehiculos: [], revisiones: [] };
+    return JSON.parse(raw);
+  } catch {
+    return { clientes: [], productos: [], vehiculos: [], revisiones: [] };
+  }
+}
+
+function saveData(data) {
+  localStorage.setItem(STORE_KEY, JSON.stringify(data));
+}
+
+let DB = loadData();
+
+// ═══════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = str ?? '';
+  return d.innerHTML;
+}
+
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+  el.textContent = (icons[type] || '') + ' ' + msg;
+  const container = document.getElementById('toast-container');
+  container.appendChild(el);
+  setTimeout(() => {
+    el.style.animation = 'none';
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(40px)';
+    el.style.transition = 'opacity 0.3s, transform 0.3s';
+    setTimeout(() => el.remove(), 350);
+  }, 3000);
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// Close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(ov => {
+  ov.addEventListener('click', e => {
+    if (e.target === ov) closeModal(ov.id);
+  });
+});
+// Close buttons
+document.querySelectorAll('[data-close]').forEach(btn => {
+  btn.addEventListener('click', () => closeModal(btn.dataset.close));
+});
+
+// ─── Confirm dialog ───
+let _confirmCb = null;
+function confirmDelete(msg, cb) {
+  document.getElementById('confirm-msg').textContent = msg;
+  _confirmCb = cb;
+  openModal('confirm-modal');
+}
+document.getElementById('btn-confirm-delete').addEventListener('click', () => {
+  closeModal('confirm-modal');
+  if (_confirmCb) { _confirmCb(); _confirmCb = null; }
+});
+
+// ═══════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════
+const SECTION_TITLES = {
+  dashboard: '🏠 Dashboard',
+  clientes: '👤 Clientes',
+  productos: '🧰 Productos',
+  vehiculos: '🚗 Vehículos',
+  revisiones: '🧾 Revisiones'
+};
+
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  document.querySelector('[data-section="' + name + '"]').classList.add('active');
+  document.getElementById('page-title').textContent = SECTION_TITLES[name];
+  // re-render when switching
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'clientes') renderClientes();
+  if (name === 'productos') renderProductos();
+  if (name === 'vehiculos') renderVehiculos();
+  if (name === 'revisiones') { populateRevMatSelect(); renderRevisiones(); }
+}
+
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    showSection(item.dataset.section);
+    // close sidebar on mobile
+    if (window.innerWidth <= 768) {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('overlay').classList.remove('visible');
+    }
+  });
+});
+
+// hamburger
+document.getElementById('hamburger').addEventListener('click', () => {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('overlay');
+  sb.classList.toggle('open');
+  ov.classList.toggle('visible');
+});
+document.getElementById('overlay').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('visible');
+});
+
+// ═══════════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════════
+function countProximasVencer() {
+  return DB.revisiones.filter(r => {
+    const km = parseInt(r.km) || 0;
+    const prox = parseInt(r.prox) || 0;
+    return prox > 0 && km >= prox - 1000;
+  }).length;
+}
+
+function renderDashboard() {
+  const cards = [
+    { icon: '👤', count: DB.clientes.length, label: 'Clientes', cls: '' },
+    { icon: '🧰', count: DB.productos.length, label: 'Productos', cls: '' },
+    { icon: '🚗', count: DB.vehiculos.length, label: 'Vehículos', cls: '' },
+    { icon: '🧾', count: DB.revisiones.length, label: 'Revisiones', cls: '' },
+    { icon: '⚠️', count: countProximasVencer(), label: 'Próx. a vencer', cls: 'warning' },
+  ];
+  const grid = document.getElementById('dash-cards');
+  grid.innerHTML = '';
+  cards.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'dash-card' + (c.cls ? ' ' + c.cls : '');
+    const icon = document.createElement('div');
+    icon.className = 'dash-card-icon';
+    icon.textContent = c.icon;
+    const count = document.createElement('div');
+    count.className = 'dash-card-count';
+    count.textContent = c.count;
+    const label = document.createElement('div');
+    label.className = 'dash-card-label';
+    label.textContent = c.label;
+    div.appendChild(icon);
+    div.appendChild(count);
+    div.appendChild(label);
+    grid.appendChild(div);
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  CLIENTES
+// ═══════════════════════════════════════════════
+function renderClientes(filter = '') {
+  const tbody = document.querySelector('#tabla-clientes tbody');
+  tbody.innerHTML = '';
+  const term = filter.toLowerCase().trim();
+  const list = term
+    ? DB.clientes.filter(c => (c.nombre || '').toLowerCase().includes(term))
+    : DB.clientes;
+  document.getElementById('clientes-count').textContent = list.length;
+  if (!list.length) {
+    const tr = document.createElement('tr');
+    tr.className = 'empty-row';
+    const td = document.createElement('td');
+    td.colSpan = 4;
+    td.textContent = 'No hay clientes registrados.';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+  list.forEach(c => {
+    const tr = document.createElement('tr');
+    const tdNom = document.createElement('td');
+    tdNom.textContent = c.nombre;
+    const tdTel = document.createElement('td');
+    tdTel.textContent = c.tel || '—';
+    const tdDir = document.createElement('td');
+    tdDir.textContent = c.dir || '—';
+    const tdAct = document.createElement('td');
+    tdAct.innerHTML = `<button class="action-btn edit" title="Editar">✏️</button> <button class="action-btn del" title="Eliminar">🗑️</button>`;
+    tdAct.querySelector('.edit').addEventListener('click', () => openEditCliente(c.id));
+    tdAct.querySelector('.del').addEventListener('click', () => deleteCliente(c.id, c.nombre));
+    tr.appendChild(tdNom); tr.appendChild(tdTel); tr.appendChild(tdDir); tr.appendChild(tdAct);
+    tbody.appendChild(tr);
+  });
+}
+
+document.getElementById('search-clientes').addEventListener('input', e => renderClientes(e.target.value));
+
+document.getElementById('btn-new-cliente').addEventListener('click', () => {
+  document.getElementById('cliente-edit-id').value = '';
+  document.getElementById('cliente-nombre').value = '';
+  document.getElementById('cliente-tel').value = '';
+  document.getElementById('cliente-dir').value = '';
+  document.getElementById('modal-cliente-title').textContent = 'Nuevo Cliente';
+  openModal('modal-cliente');
+  setTimeout(() => document.getElementById('cliente-nombre').focus(), 100);
+});
+
+function openEditCliente(id) {
+  const c = DB.clientes.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('cliente-edit-id').value = c.id;
+  document.getElementById('cliente-nombre').value = c.nombre || '';
+  document.getElementById('cliente-tel').value = c.tel || '';
+  document.getElementById('cliente-dir').value = c.dir || '';
+  document.getElementById('modal-cliente-title').textContent = 'Editar Cliente';
+  openModal('modal-cliente');
+}
+
+document.getElementById('btn-save-cliente').addEventListener('click', () => {
+  const nombre = document.getElementById('cliente-nombre').value.trim();
+  if (!nombre) { toast('El nombre es obligatorio.', 'error'); return; }
+  const id = document.getElementById('cliente-edit-id').value;
+  const tel = document.getElementById('cliente-tel').value.trim();
+  const dir = document.getElementById('cliente-dir').value.trim();
+  if (id) {
+    const idx = DB.clientes.findIndex(x => x.id === id);
+    if (idx !== -1) DB.clientes[idx] = { id, nombre, tel, dir };
+    toast('Cliente actualizado.', 'success');
+  } else {
+    DB.clientes.push({ id: genId(), nombre, tel, dir });
+    toast('Cliente añadido.', 'success');
+  }
+  saveData(DB);
+  closeModal('modal-cliente');
+  renderClientes(document.getElementById('search-clientes').value);
+});
+
+function deleteCliente(id, nombre) {
+  confirmDelete(`¿Eliminar cliente "${nombre}"?`, () => {
+    DB.clientes = DB.clientes.filter(x => x.id !== id);
+    saveData(DB);
+    renderClientes(document.getElementById('search-clientes').value);
+    toast('Cliente eliminado.', 'info');
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  PRODUCTOS
+// ═══════════════════════════════════════════════
+function renderProductos(filter = '', tipoFilter = '') {
+  const tbody = document.querySelector('#tabla-productos tbody');
+  tbody.innerHTML = '';
+  const term = filter.toLowerCase().trim();
+  let list = DB.productos;
+  if (tipoFilter) list = list.filter(p => p.tipo === tipoFilter);
+  if (term) list = list.filter(p =>
+    (p.nombre || '').toLowerCase().includes(term) ||
+    (p.marca || '').toLowerCase().includes(term) ||
+    (p.ref || '').toLowerCase().includes(term)
+  );
+  document.getElementById('productos-count').textContent = list.length;
+  if (!list.length) {
+    const tr = document.createElement('tr');
+    tr.className = 'empty-row';
+    const td = document.createElement('td');
+    td.colSpan = 5;
+    td.textContent = 'No hay productos registrados.';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+  list.forEach(p => {
+    const tr = document.createElement('tr');
+    [p.tipo, p.nombre, p.marca || '—', p.ref || '—'].forEach(v => {
+      const td = document.createElement('td');
+      td.textContent = v;
+      tr.appendChild(td);
+    });
+    const tdAct = document.createElement('td');
+    tdAct.innerHTML = `<button class="action-btn edit">✏️</button> <button class="action-btn del">🗑️</button>`;
+    tdAct.querySelector('.edit').addEventListener('click', () => openEditProducto(p.id));
+    tdAct.querySelector('.del').addEventListener('click', () => deleteProducto(p.id, p.nombre));
+    tr.appendChild(tdAct);
+    tbody.appendChild(tr);
+  });
+}
+
+document.getElementById('search-productos').addEventListener('input', () => {
+  renderProductos(
+    document.getElementById('search-productos').value,
+    document.getElementById('filter-tipo-producto').value
+  );
+});
+document.getElementById('filter-tipo-producto').addEventListener('change', () => {
+  renderProductos(
+    document.getElementById('search-productos').value,
+    document.getElementById('filter-tipo-producto').value
+  );
+});
+
+document.getElementById('btn-new-producto').addEventListener('click', () => {
+  document.getElementById('producto-edit-id').value = '';
+  document.getElementById('producto-tipo').value = '';
+  document.getElementById('producto-nombre').value = '';
+  document.getElementById('producto-marca').value = '';
+  document.getElementById('producto-ref').value = '';
+  document.getElementById('modal-producto-title').textContent = 'Nuevo Producto';
+  openModal('modal-producto');
+});
+
+function openEditProducto(id) {
+  const p = DB.productos.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('producto-edit-id').value = p.id;
+  document.getElementById('producto-tipo').value = p.tipo || '';
+  document.getElementById('producto-nombre').value = p.nombre || '';
+  document.getElementById('producto-marca').value = p.marca || '';
+  document.getElementById('producto-ref').value = p.ref || '';
+  document.getElementById('modal-producto-title').textContent = 'Editar Producto';
+  openModal('modal-producto');
+}
+
+document.getElementById('btn-save-producto').addEventListener('click', () => {
+  const tipo = document.getElementById('producto-tipo').value;
+  const nombre = document.getElementById('producto-nombre').value.trim();
+  if (!tipo) { toast('Selecciona un tipo.', 'error'); return; }
+  if (!nombre) { toast('El nombre es obligatorio.', 'error'); return; }
+  const id = document.getElementById('producto-edit-id').value;
+  const marca = document.getElementById('producto-marca').value.trim();
+  const ref = document.getElementById('producto-ref').value.trim();
+  if (id) {
+    const idx = DB.productos.findIndex(x => x.id === id);
+    if (idx !== -1) DB.productos[idx] = { id, tipo, nombre, marca, ref };
+    toast('Producto actualizado.', 'success');
+  } else {
+    DB.productos.push({ id: genId(), tipo, nombre, marca, ref });
+    toast('Producto añadido.', 'success');
+  }
+  saveData(DB);
+  closeModal('modal-producto');
+  renderProductos(
+    document.getElementById('search-productos').value,
+    document.getElementById('filter-tipo-producto').value
+  );
+});
+
+function deleteProducto(id, nombre) {
+  confirmDelete(`¿Eliminar producto "${nombre}"?`, () => {
+    DB.productos = DB.productos.filter(x => x.id !== id);
+    saveData(DB);
+    renderProductos(
+      document.getElementById('search-productos').value,
+      document.getElementById('filter-tipo-producto').value
+    );
+    toast('Producto eliminado.', 'info');
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  VEHÍCULOS
+// ═══════════════════════════════════════════════
+function getProductosByTipo(tipo) {
+  const t = tipo.toLowerCase().trim();
+  return DB.productos.filter(p => (p.tipo || '').toLowerCase().trim() === t);
+}
+
+function buildProductSelect(selectEl, tipo, currentVal) {
+  selectEl.innerHTML = '';
+  const na = document.createElement('option');
+  na.value = 'N/A';
+  na.textContent = 'N/A';
+  selectEl.appendChild(na);
+  const prods = getProductosByTipo(tipo);
+  prods.forEach(p => {
+    const opt = document.createElement('option');
+    const label = [p.nombre, p.marca, p.ref].filter(Boolean).join(' — ');
+    opt.value = label;
+    opt.textContent = label;
+    selectEl.appendChild(opt);
+  });
+  // Try to preselect
+  if (currentVal && currentVal !== 'N/A') {
+    const found = Array.from(selectEl.options).find(o => o.value === currentVal);
+    if (found) {
+      selectEl.value = currentVal;
+    } else {
+      // If not found (legacy data), add it as an option
+      const custom = document.createElement('option');
+      custom.value = currentVal;
+      custom.textContent = currentVal + ' (importado)';
+      selectEl.appendChild(custom);
+      selectEl.value = currentVal;
+    }
+  } else {
+    selectEl.value = 'N/A';
+  }
+}
+
+function populateVehiculoModal(veh = null) {
+  // Clients select
+  const selCliente = document.getElementById('veh-cliente');
+  selCliente.innerHTML = '<option value="">— Sin cliente —</option>';
+  DB.clientes.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.nombre;
+    opt.textContent = c.nombre;
+    selCliente.appendChild(opt);
+  });
+  if (veh) selCliente.value = veh.cliente || '';
+
+  // Product selects
+  const maps = [
+    ['veh-aceite', 'aceites', veh ? veh.aceite : ''],
+    ['veh-fa',    'filtro aceite', veh ? veh.fa : ''],
+    ['veh-fai',   'filtro aire', veh ? veh.fai : ''],
+    ['veh-fc',    'filtro combustible', veh ? veh.fc : ''],
+    ['veh-fh',    'filtro habitaculo', veh ? veh.fh : ''],
+    ['veh-ar',    'arandela carter', veh ? veh.ar : ''],
+  ];
+  maps.forEach(([selId, tipo, val]) => {
+    buildProductSelect(document.getElementById(selId), tipo, val);
+  });
+}
+
+function renderVehiculos(filter = '') {
+  const tbody = document.querySelector('#tabla-vehiculos tbody');
+  tbody.innerHTML = '';
+  const term = filter.toLowerCase().trim();
+  const list = term
+    ? DB.vehiculos.filter(v =>
+        (v.mat || '').toLowerCase().includes(term) ||
+        (v.cliente || '').toLowerCase().includes(term))
+    : DB.vehiculos;
+  document.getElementById('vehiculos-count').textContent = list.length;
+  if (!list.length) {
+    const tr = document.createElement('tr');
+    tr.className = 'empty-row';
+    const td = document.createElement('td');
+    td.colSpan = 13;
+    td.textContent = 'No hay vehículos registrados.';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+  const fields = ['mat','cliente','marca','modelo','motor','aceite','litros','fa','fai','fc','fh','ar'];
+  list.forEach(v => {
+    const tr = document.createElement('tr');
+    fields.forEach(f => {
+      const td = document.createElement('td');
+      td.textContent = v[f] || '—';
+      tr.appendChild(td);
+    });
+    const tdAct = document.createElement('td');
+    tdAct.innerHTML = `<button class="action-btn edit">✏️</button> <button class="action-btn del">🗑️</button>`;
+    tdAct.querySelector('.edit').addEventListener('click', () => openEditVehiculo(v.id));
+    tdAct.querySelector('.del').addEventListener('click', () => deleteVehiculo(v.id, v.mat));
+    tr.appendChild(tdAct);
+    tbody.appendChild(tr);
+  });
+}
+
+document.getElementById('search-vehiculos').addEventListener('input', e => renderVehiculos(e.target.value));
+
+document.getElementById('btn-new-vehiculo').addEventListener('click', () => {
+  document.getElementById('vehiculo-edit-id').value = '';
+  document.getElementById('veh-mat').value = '';
+  document.getElementById('veh-marca').value = '';
+  document.getElementById('veh-modelo').value = '';
+  document.getElementById('veh-motor').value = '';
+  document.getElementById('veh-litros').value = '';
+  document.getElementById('modal-vehiculo-title').textContent = 'Nuevo Vehículo';
+  populateVehiculoModal(null);
+  openModal('modal-vehiculo');
+});
+
+function openEditVehiculo(id) {
+  const v = DB.vehiculos.find(x => x.id === id);
+  if (!v) return;
+  document.getElementById('vehiculo-edit-id').value = v.id;
+  document.getElementById('veh-mat').value = v.mat || '';
+  document.getElementById('veh-marca').value = v.marca || '';
+  document.getElementById('veh-modelo').value = v.modelo || '';
+  document.getElementById('veh-motor').value = v.motor || '';
+  document.getElementById('veh-litros').value = v.litros || '';
+  document.getElementById('modal-vehiculo-title').textContent = 'Editar Vehículo';
+  populateVehiculoModal(v);
+  openModal('modal-vehiculo');
+}
+
+document.getElementById('btn-save-vehiculo').addEventListener('click', () => {
+  const mat = document.getElementById('veh-mat').value.trim().toUpperCase();
+  if (!mat) { toast('La matrícula es obligatoria.', 'error'); return; }
+  const id = document.getElementById('vehiculo-edit-id').value;
+  const veh = {
+    id: id || genId(),
+    mat,
+    cliente: document.getElementById('veh-cliente').value.trim(),
+    marca: document.getElementById('veh-marca').value.trim(),
+    modelo: document.getElementById('veh-modelo').value.trim(),
+    motor: document.getElementById('veh-motor').value.trim(),
+    aceite: document.getElementById('veh-aceite').value,
+    litros: document.getElementById('veh-litros').value.trim(),
+    fa: document.getElementById('veh-fa').value,
+    fai: document.getElementById('veh-fai').value,
+    fc: document.getElementById('veh-fc').value,
+    fh: document.getElementById('veh-fh').value,
+    ar: document.getElementById('veh-ar').value,
+  };
+  if (id) {
+    const idx = DB.vehiculos.findIndex(x => x.id === id);
+    if (idx !== -1) DB.vehiculos[idx] = veh;
+    toast('Vehículo actualizado.', 'success');
+  } else {
+    DB.vehiculos.push(veh);
+    toast('Vehículo añadido.', 'success');
+  }
+  saveData(DB);
+  closeModal('modal-vehiculo');
+  renderVehiculos(document.getElementById('search-vehiculos').value);
+});
+
+function deleteVehiculo(id, mat) {
+  confirmDelete(`¿Eliminar vehículo "${mat}"?`, () => {
+    DB.vehiculos = DB.vehiculos.filter(x => x.id !== id);
+    saveData(DB);
+    renderVehiculos(document.getElementById('search-vehiculos').value);
+    toast('Vehículo eliminado.', 'info');
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  REVISIONES
+// ═══════════════════════════════════════════════
+function populateRevMatSelect() {
+  const sel = document.getElementById('rev-mat');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Seleccionar vehículo —</option>';
+  DB.vehiculos.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v.mat;
+    opt.textContent = v.mat + (v.cliente ? ' — ' + v.cliente : '');
+    sel.appendChild(opt);
+  });
+  if (cur) sel.value = cur;
+}
+
+function getVehicleProductsSummary(mat) {
+  const v = DB.vehiculos.find(x => x.mat === mat);
+  if (!v) return '';
+  const parts = [
+    v.aceite && v.aceite !== 'N/A' ? '🛢️ ' + v.aceite + (v.litros && v.litros !== 'N/A' ? ' ' + v.litros : '') : '',
+    v.fa && v.fa !== 'N/A' ? '🔩 FA: ' + v.fa : '',
+    v.fai && v.fai !== 'N/A' ? '💨 FAi: ' + v.fai : '',
+    v.fc && v.fc !== 'N/A' ? '⛽ FC: ' + v.fc : '',
+    v.fh && v.fh !== 'N/A' ? '🏠 FH: ' + v.fh : '',
+    v.ar && v.ar !== 'N/A' ? '🪙 AR: ' + v.ar : '',
+  ].filter(Boolean);
+  return parts.join(' | ');
+}
+
+function getVehicleProductsString(mat) {
+  const v = DB.vehiculos.find(x => x.mat === mat);
+  if (!v) return '';
+  return [v.aceite, v.fa, v.fai, v.fc, v.fh, v.ar]
+    .filter(x => x && x !== 'N/A').join(', ');
+}
+
+document.getElementById('rev-mat').addEventListener('change', function () {
+  const mat = this.value;
+  const summary = document.getElementById('rev-vehicle-summary');
+  if (mat) {
+    const text = getVehicleProductsSummary(mat);
+    if (text) {
+      summary.textContent = text;
+      summary.classList.add('visible');
+    } else {
+      summary.classList.remove('visible');
+    }
+  } else {
+    summary.classList.remove('visible');
+  }
+});
+
+// Set today's date as default
+function setTodayDate() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('rev-fecha').value = today;
+}
+setTodayDate();
+
+function resetRevForm() {
+  document.getElementById('rev-edit-id').value = '';
+  document.getElementById('rev-mat').value = '';
+  document.getElementById('rev-fecha').value = new Date().toISOString().split('T')[0];
+  document.getElementById('rev-km').value = '';
+  document.getElementById('rev-ver').value = 'Sí';
+  document.getElementById('rev-notas').value = '';
+  document.getElementById('rev-vehicle-summary').classList.remove('visible');
+  document.getElementById('rev-form-title').textContent = '➕ Nueva Revisión';
+  document.getElementById('btn-cancel-revision').style.display = 'none';
+}
+
+document.getElementById('btn-cancel-revision').addEventListener('click', () => {
+  resetRevForm();
+});
+
+document.getElementById('btn-save-revision').addEventListener('click', () => {
+  const mat = document.getElementById('rev-mat').value;
+  if (!mat) { toast('Selecciona un vehículo.', 'error'); return; }
+  const fecha = document.getElementById('rev-fecha').value;
+  if (!fecha) { toast('La fecha es obligatoria.', 'error'); return; }
+  const kmVal = document.getElementById('rev-km').value;
+  if (!kmVal) { toast('Los kilómetros son obligatorios.', 'error'); return; }
+  const km = parseInt(kmVal) || 0;
+  const prox = km + 10000;
+  const ver = document.getElementById('rev-ver').value;
+  const notas = document.getElementById('rev-notas').value.trim();
+  const productos = getVehicleProductsString(mat);
+  const editId = document.getElementById('rev-edit-id').value;
+
+  if (editId) {
+    const idx = DB.revisiones.findIndex(x => x.id === editId);
+    if (idx !== -1) {
+      DB.revisiones[idx] = { id: editId, mat, fecha, km, prox, ver, productos, notas };
+    }
+    toast('Revisión actualizada.', 'success');
+  } else {
+    DB.revisiones.push({ id: genId(), mat, fecha, km, prox, ver, productos, notas });
+    toast('Revisión guardada.', 'success');
+  }
+  saveData(DB);
+  resetRevForm();
+  renderRevisiones(document.getElementById('search-revisiones').value);
+});
+
+function renderRevisiones(filter = '') {
+  const tbody = document.querySelector('#tabla-revisiones tbody');
+  tbody.innerHTML = '';
+  const term = filter.toLowerCase().trim();
+  let list = [...DB.revisiones].sort((a, b) => (b.fecha || '') > (a.fecha || '') ? 1 : -1);
+  if (term) list = list.filter(r => (r.mat || '').toLowerCase().includes(term));
+  document.getElementById('revisiones-count').textContent = list.length;
+  if (!list.length) {
+    const tr = document.createElement('tr');
+    tr.className = 'empty-row';
+    const td = document.createElement('td');
+    td.colSpan = 8;
+    td.textContent = 'No hay revisiones registradas.';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+  list.forEach(r => {
+    const km = parseInt(r.km) || 0;
+    const prox = parseInt(r.prox) || 0;
+    const isWarn = prox > 0 && km >= prox - 1000;
+    const tr = document.createElement('tr');
+    if (isWarn) tr.className = 'row-danger';
+
+    const cells = [r.mat, r.fecha, r.km, r.prox, r.productos || '—'];
+    cells.forEach(v => {
+      const td = document.createElement('td');
+      td.textContent = v ?? '—';
+      tr.appendChild(td);
+    });
+    // Verificado badge
+    const tdVer = document.createElement('td');
+    const badge = document.createElement('span');
+    badge.className = r.ver === 'Sí' ? 'badge badge-yes' : 'badge badge-no';
+    badge.textContent = r.ver || 'No';
+    tdVer.appendChild(badge);
+    tr.appendChild(tdVer);
+    // Notas
+    const tdNot = document.createElement('td');
+    tdNot.textContent = r.notas || '—';
+    tdNot.style.maxWidth = '200px';
+    tdNot.style.overflow = 'hidden';
+    tdNot.style.textOverflow = 'ellipsis';
+    tdNot.style.whiteSpace = 'nowrap';
+    tr.appendChild(tdNot);
+    // Actions
+    const tdAct = document.createElement('td');
+    tdAct.innerHTML = `<button class="action-btn edit">✏️</button> <button class="action-btn del">🗑️</button>`;
+    tdAct.querySelector('.edit').addEventListener('click', () => editRevision(r.id));
+    tdAct.querySelector('.del').addEventListener('click', () => deleteRevision(r.id, r.mat));
+    tr.appendChild(tdAct);
+    tbody.appendChild(tr);
+  });
+}
+
+function editRevision(id) {
+  const r = DB.revisiones.find(x => x.id === id);
+  if (!r) return;
+  populateRevMatSelect();
+  document.getElementById('rev-edit-id').value = r.id;
+  document.getElementById('rev-mat').value = r.mat || '';
+  document.getElementById('rev-fecha').value = r.fecha || '';
+  document.getElementById('rev-km').value = r.km || '';
+  document.getElementById('rev-ver').value = r.ver || 'Sí';
+  document.getElementById('rev-notas').value = r.notas || '';
+  document.getElementById('rev-form-title').textContent = '✏️ Editar Revisión';
+  document.getElementById('btn-cancel-revision').style.display = '';
+  // Trigger summary
+  const mat = r.mat;
+  const summary = document.getElementById('rev-vehicle-summary');
+  if (mat) {
+    const text = getVehicleProductsSummary(mat);
+    if (text) { summary.textContent = text; summary.classList.add('visible'); }
+  }
+  document.getElementById('section-revisiones').scrollIntoView({ behavior: 'smooth' });
+}
+
+function deleteRevision(id, mat) {
+  confirmDelete(`¿Eliminar la revisión del vehículo "${mat}"?`, () => {
+    DB.revisiones = DB.revisiones.filter(x => x.id !== id);
+    saveData(DB);
+    renderRevisiones(document.getElementById('search-revisiones').value);
+    toast('Revisión eliminada.', 'info');
+  });
+}
+
+document.getElementById('search-revisiones').addEventListener('input', e => renderRevisiones(e.target.value));
+document.getElementById('btn-ver-todas').addEventListener('click', () => {
+  document.getElementById('search-revisiones').value = '';
+  renderRevisiones('');
+});
+
+// ═══════════════════════════════════════════════
+//  EXPORT / IMPORT
+// ═══════════════════════════════════════════════
+document.getElementById('btn-export').addEventListener('click', () => {
+  const json = JSON.stringify(DB, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'taller_backup.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Datos exportados correctamente.', 'success');
+});
+
+document.getElementById('btn-import-btn').addEventListener('click', () => {
+  document.getElementById('import-file').click();
+});
+
+document.getElementById('import-file').addEventListener('change', function () {
+  const file = this.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      // Ensure arrays exist
+      const clientes = (imported.clientes || []).map(c => ({ ...c, id: c.id || genId() }));
+      const productos = (imported.productos || []).map(p => ({ ...p, id: p.id || genId() }));
+      const vehiculos = (imported.vehiculos || []).map(v => ({ ...v, id: v.id || genId() }));
+      const revisiones = (imported.revisiones || []).map(r => ({ ...r, id: r.id || genId() }));
+      DB = { clientes, productos, vehiculos, revisiones };
+      saveData(DB);
+      // Re-render current section
+      renderDashboard();
+      renderClientes();
+      renderProductos();
+      renderVehiculos();
+      populateRevMatSelect();
+      renderRevisiones();
+      toast(`Importado: ${clientes.length} clientes, ${productos.length} productos, ${vehiculos.length} vehículos, ${revisiones.length} revisiones.`, 'success');
+    } catch (err) {
+      toast('Error al importar: JSON inválido.', 'error');
+    }
+    this.value = '';
+  };
+  reader.readAsText(file);
+});
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+renderDashboard();
+renderClientes();
+renderProductos();
+renderVehiculos();
+populateRevMatSelect();
+renderRevisiones();
+
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
