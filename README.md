@@ -63,13 +63,3 @@ taller-mecanico-app/
   "revisiones": []
 }
 ```
-
-Al importar, los registros sin `id` reciben uno generado automáticamente.
-
----
-
-## 🚀 Deploy en GitHub Pages
-
-El workflow `.github/workflows/pages.yml` publica automáticamente al hacer push a `main`.
-
-Activa GitHub Pages en: **Settings → Pages → Source: GitHub Actions**.
